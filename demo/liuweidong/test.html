@@ -1,0 +1,152 @@
+<html>
+<head>
+    <title>My first Three.js app</title>
+    <style>
+        body { margin: 0; }
+        canvas { width: 100%; height: 100% }
+    </style>
+</head>
+<body>
+<script src="//wow.techbrood.com/libs/three.r73.js"></script>
+<script>
+    ModelBusiness.prototype.getAllFloorBuild = function () {
+        var _this = this;
+        if (!_this.outFloorModels) {
+            var modelNames = ["cM_dingweifloor_8", "cM_dingweifloor_7", "cM_dingweifloor_6", "cM_dingweifloor_5", "cM_dingweifloor_4", "cM_dingweifloor_3", "cM_dingweifloor_2", "cM_dingweifloor_1"];
+            var models = WT3DObj.commonFunc.findObjectsByNames(modelNames);
+            _this.outFloorModels = {};
+            $.each(models, function (_index, _obj) {
+                _this.outFloorModels[_obj.name] = _obj;
+            });
+        }
+        return _this.outFloorModels;
+    }
+    //floornub:楼层编号
+    ModelBusiness.prototype.showFloor = function ( floornub) {
+        var _this = this;
+        _this.getAllFloorBuild();
+        _this.removeAllMark();
+
+        if (_this.build1CurrentShowFlow == 8&&_this.currentShowLocationState == 1) {
+            _this.closeLocation(doshowAnimiation);
+        } else {
+            doshowAnimiation();
+        }
+        function doshowAnimiation(){
+            WT3DObj.commonFunc.changeCameraPosition(
+                { x: -3160 + (8 - floornub) * 300, y: 5645 - (8 - floornub) * 300, z: -3292 + (8 - floornub) * 300 },
+                { x: 80, y: 23, z: 155 },
+                500,
+                function () {
+                    if (_this.build1CurrentShowFlow > floornub)
+                    {
+                        var start = _this.build1CurrentShowFlow;
+                        _this.build1CurrentShowFlow = floornub;
+                        for (var i = start; i >= floornub + 1; i--) {
+                            (function (floorindex) {
+                                setTimeout(function () {
+                                    var movemodesname = "cM_dingweifloor_" + floorindex;
+                                    var movemodel = _this.outFloorModels[movemodesname];
+                                    if (!movemodel.oldposition) {
+                                        movemodel.oldposition = {
+                                            x: movemodel.position.x,
+                                            y: movemodel.position.y,
+                                            z: movemodel.position.z
+                                        };
+                                    }
+                                    var moveToPositon = movemodel.position.y + 5000;
+                                    new TWEEN.Tween(movemodel.position).to({
+                                        y: moveToPositon
+                                    }, 1000).onComplete(function () {
+                                        movemodel.visible = false;
+                                        if (floorindex == floornub + 1) {
+                                            if (_this.currentShowLocationState == 1) {
+                                                if (floornub < 8) {
+                                                    var showTxt = "";
+                                                    showTxt += _this.addFloorMarks(floornub);
+                                                    $("#showText").html(showTxt);
+                                                } else {
+                                                    _this.showLocation();
+                                                }
+                                            }
+                                        }
+                                    }).start();
+                                }, 500 * (start+1 - floorindex));
+                            })(i);
+                        }
+
+                    }
+                    else if (_this.build1CurrentShowFlow < floornub)
+                    {
+                        var start = _this.build1CurrentShowFlow+1;
+                        _this.build1CurrentShowFlow = floornub;
+                        for (var i = start; i <= floornub ; i++) {
+                            (function (floorindex) {
+                                setTimeout(function () {
+                                    var movemodesname = "cM_dingweifloor_" + floorindex;
+                                    var movemodel = _this.outFloorModels[movemodesname];
+                                    var moveToPositon = movemodel.oldposition.y;
+                                    movemodel.visible = true;
+                                    new TWEEN.Tween(movemodel.position).to({
+                                        y: moveToPositon
+                                    }, 1000).onComplete(function () {
+                                        if (floorindex == floornub) {
+                                            setTimeout(function () {
+                                                if (_this.currentShowLocationState == 1) {
+                                                    if (floornub < 8) {
+                                                        var showTxt = "";
+                                                        showTxt += _this.addFloorMarks(floornub);
+                                                        $("#showText").html(showTxt);
+                                                    } else {
+                                                        _this.showLocation();
+                                                    }
+                                                }
+                                            }, 150 * floornub - start);
+                                        }
+
+
+                                    }).start();
+                                }, 500 * (floorindex-start + 1));
+                            })(i);
+                        }
+
+                    }
+
+                });
+        }
+    }
+
+    ModelBusiness.prototype.dbClickFloor = function (clickObj) {
+        console.log(clickObj);
+        var modelNames = ["cM_dingweifloor_8", "cM_dingweifloor_7", "cM_dingweifloor_6", "cM_dingweifloor_5", "cM_dingweifloor_4", "cM_dingweifloor_3", "cM_dingweifloor_2", "cM_dingweifloor_1"];
+        if (clickObj.name.indexOf("cM_dingweifloor_") >= 0) {
+            this.showFloor( parseInt(clickObj.name.replace("cM_dingweifloor_", "")));
+        }
+    }
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    var cube = new THREE.Mesh( geometry, material );
+    scene.add( cube );
+
+    camera.position.z = 5;
+
+    var render = function () {
+        requestAnimationFrame( render );
+
+        cube.rotation.x += 0.1;
+        cube.rotation.y += 0.1;
+
+        renderer.render(scene, camera);
+    };
+
+    render();
+</script>
+</body>
+</html>
